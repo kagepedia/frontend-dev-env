@@ -1,145 +1,107 @@
-const path = require('path');
-const webpack = require('webpack');
+const path = require("path");
 const globule = require('globule');
-const ExtractTextPlugin = require('extract-text-webpack-plugin');
+const HtmlWebpackPlugin = require('html-webpack-plugin');
+const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const CopyWebpackPlugin = require('copy-webpack-plugin');
+const { CleanWebpackPlugin } = require('clean-webpack-plugin');
+// const autoprefixer = require('autoprefixer');
 
-const dir = {
-    src: path.join(__dirname, 'source'),
-    public: path.join(__dirname, 'public')
+const targetTypes = {
+  pug: 'html',
+  scss: 'css',
+  js: 'js'
 };
 
-const convertExtensions = {
-    pug: 'html',
-    scss: 'css',
-    js: 'js'
-};
-
-const mode = 'production'; //development:開発, production:本番
-const entry = {
-    pug: {},
-    scss: {},
-    js: {}
-};
-
-// ファイルの分類
-Object.keys(convertExtensions).forEach(from => {
-    const to = convertExtensions[from];
-    globule.find([`**/*.${from}`, `!**/_*.${from}`], { cwd: dir['src'] }).forEach(filename => {
-        let _output = filename.replace(new RegExp(`.${from}$`, 'i'), `.${to}`);
-        let _source = path.join(dir['src'], filename);
-        if (_output.indexOf('template/') !== -1) {
-            _output = _output.replace('template/', '');
-            entry['pug'][_output] = _source;
-            console.log('-------------------_output------------------------')
-            console.log(_output);
-            console.log('-------------------_source------------------------')
-            console.log(_source);
-            console.log('-------------------end------------------------')
-            /*
-            return new HtmlWebpackPlugin({
-                filename: filename.replace(new RegExp(`.${from}$`, 'i'), `.${to}`).replace(/(\.\/)?pug/, '.'),
-                template: `./${filename}`
-            })
-            */
-        }
-        if (_output.indexOf('assets/scss/') !== -1) {
-            _output = _output.replace('assets/scss/', 'assets/css/');
-            entry['scss'][_output] = _source;
-        }
-        if (_output.indexOf('assets/js/') !== -1) {
-            _output = _output.replace('assets/js/', 'assets/js/');
-            entry['js'][_output] = _source;
-        }
-    });
-});
-
-// pug
-const pugConfig = {
-    mode: mode,
-    entry: entry['pug'],
-    output: {
-        filename: '[name]',
-        publicPath: '/',
-        path: dir['public']
+const getEntriesList = (targetTypes) => {
+  const entriesList = {};
+  for(const [ srcType, targetType ] of Object.entries(targetTypes)) {
+    const filesMatched = globule.find([`**/*.${srcType}`, `!**/_*.${srcType}`], { cwd : `${__dirname}/source` });
+    
+    for(const srcName of filesMatched) {
+        let targetName = srcName.replace(new RegExp(`.${srcType}$`, 'i'), `.${targetType}`);
+      if (targetName.indexOf('template/') !== -1) {
+        targetName = targetName.replace('template/', '');
+      }
+      if (targetName.indexOf('assets/scss/') !== -1) {
+        targetName = targetName.replace('assets/scss/', 'assets/css/');
+      }
+      if (targetName.indexOf('assets/js/') !== -1) {
+        targetName = targetName.replace('assets/js/', 'assets/js/');
+      }
+      entriesList[targetName] = `${__dirname}/source/${srcName}`;
+    }
+  }
+  return entriesList;
+}
+console.log(getEntriesList(targetTypes));
+const app = {
+    mode : 'none',
+    entry  : getEntriesList(targetTypes),
+    output : {
+        filename : '[name]',
+        path     : `${__dirname}/public`
     },
-    module: {
-        rules: [
+    devServer: {
+        contentBase: path.join(__dirname, 'public'),
+        open: true
+    },
+    module : {
+        rules : [
             {
-                test: /\.pug$/,
-                use: ['pug-loader', 'apply-loader']
-            }
-        ]
-    },
-    plugins: [
-        new ExtractTextPlugin('[name]')
-    ],
-    cache: true
-};
-
-// sass
-const scssConfig = {
-    mode: mode,
-    entry: entry['scss'],
-    output: {
-        filename: '[name]',
-        publicPath: 'assets/',
-        path: dir['public']
-    },
-    module: {
-        rules: [
+                test : /\.pug$/,
+                use  : [
+                    {
+                        loader: 'pug-loader',
+                        options: {
+                            pretty: true
+                        }
+                    }
+                ]
+            },
             {
                 test: /\.scss$/,
-                use: ExtractTextPlugin.extract([
-                    {
-                        loader: 'css-loader',
-                        options: {
-                            url: false,
-                            sourceMap: true
-                        }
-                    },
-                    {
-                        loader: 'sass-loader',
-                    }
-                ])
-            }
-        ]
-    },
-    plugins: [
-        new ExtractTextPlugin('[name]')
-    ],
-    cache: true
-};
-
-// js
-const jsConfig = {
-    mode: mode,
-    entry: entry['js'],
-    output: {
-        filename: '[name]',
-        publicPath: 'assets/',
-        path: dir['public']
-    },
-    resolve: {
-        extensions: ['.js']
-    },
-    module: {
-        rules: [
+                use: [
+                    MiniCssExtractPlugin.loader,
+                    'css-loader',
+                    'sass-loader'
+                ]
+            },
             {
                 test:/\.js$/,
                 exclude: '/node_modules/',
                 use: {
                     loader: 'babel-loader',
                     options: {
-                      presets: ['babel-preset-env']
+                        presets: ['babel-preset-env']
                     }
                 }
             }
         ]
     },
-    plugins: [
-        new webpack.optimize.AggressiveMergingPlugin()
-    ],
-    cache: true
+    plugins : [
+        new CopyWebpackPlugin(
+        [{ from : `${__dirname}/source` }],
+        { ignore : Object.keys(targetTypes).map((ext) => `*.${ext}`) }
+        ),
+        new CleanWebpackPlugin({
+            cleanAfterEveryBuildPatterns: ['public'],
+            exclude: ['public/assets/img']
+        })
+    ]
 };
 
-module.exports = [scssConfig, jsConfig, pugConfig];
+// pug -> html
+for(const [ targetName, srcName ] of Object.entries(getEntriesList({ pug : 'html' }))) {
+  app.plugins.push(new HtmlWebpackPlugin({
+    filename : targetName,
+    template : srcName
+  }));
+}
+
+// sass -> css
+for(const [ targetName, srcName ] of Object.entries(getEntriesList({ scss : 'css' }))) {
+    app.plugins.push(new MiniCssExtractPlugin({
+      filename : targetName,
+    }));
+}  
+module.exports = app;
