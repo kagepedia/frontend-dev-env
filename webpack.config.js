@@ -80,8 +80,8 @@ const app = {
     },
     plugins : [
         new CopyWebpackPlugin(
-        [{ from : `${__dirname}/source` }],
-        { ignore : Object.keys(targetTypes).map((ext) => `*.${ext}`) }
+            [{ from : `${__dirname}/source` }],
+            { ignore : Object.keys(targetTypes).map((ext) => `*.${ext}`) }
         ),
         new CleanWebpackPlugin({
             cleanAfterEveryBuildPatterns: ['public'],
@@ -92,16 +92,17 @@ const app = {
 
 // pug -> html
 for(const [ targetName, srcName ] of Object.entries(getEntriesList({ pug : 'html' }))) {
-  app.plugins.push(new HtmlWebpackPlugin({
-    filename : targetName,
-    template : srcName
-  }));
+    app.plugins.push(new HtmlWebpackPlugin({
+        filename : targetName,
+        template : srcName
+    }));
 }
 
 // sass -> css
 for(const [ targetName, srcName ] of Object.entries(getEntriesList({ scss : 'css' }))) {
     app.plugins.push(new MiniCssExtractPlugin({
-      filename : targetName,
+        filename : targetName,
     }));
-}  
+}
+
 module.exports = app;
