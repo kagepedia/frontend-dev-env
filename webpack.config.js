@@ -4,7 +4,7 @@ const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
-// const autoprefixer = require('autoprefixer');
+const FixStyleOnlyEntriesPlugin = require("webpack-fix-style-only-entries");
 
 const targetTypes = {
   pug: 'html',
@@ -62,7 +62,12 @@ const app = {
                 test: /\.scss$/,
                 use: [
                     MiniCssExtractPlugin.loader,
-                    'css-loader',
+                    {
+                        loader: "css-loader",
+                        options: {
+                            url: false,
+                        }
+                    },
                     'sass-loader'
                 ]
             },
@@ -79,6 +84,7 @@ const app = {
         ]
     },
     plugins : [
+        new FixStyleOnlyEntriesPlugin(),
         new CopyWebpackPlugin(
             [{ from : `${__dirname}/source` }],
             { ignore : Object.keys(targetTypes).map((ext) => `*.${ext}`) }
@@ -86,7 +92,10 @@ const app = {
         new CleanWebpackPlugin({
             cleanAfterEveryBuildPatterns: ['public'],
             exclude: ['public/assets/img']
-        })
+        }),
+        new MiniCssExtractPlugin({
+            filename: './[name]',
+        }),
     ]
 };
 
@@ -97,12 +106,4 @@ for(const [ targetName, srcName ] of Object.entries(getEntriesList({ pug : 'html
         template : srcName
     }));
 }
-
-// sass -> css
-for(const [ targetName, srcName ] of Object.entries(getEntriesList({ scss : 'css' }))) {
-    app.plugins.push(new MiniCssExtractPlugin({
-        filename : targetName,
-    }));
-}
-
 module.exports = app;
