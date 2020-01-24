@@ -33,77 +33,126 @@ const getEntriesList = (targetTypes) => {
   }
   return entriesList;
 }
-console.log(getEntriesList(targetTypes));
-const app = {
-    mode : 'none',
-    entry  : getEntriesList(targetTypes),
-    output : {
-        filename : '[name]',
-        path     : `${__dirname}/public`
-    },
-    devServer: {
-        contentBase: path.join(__dirname, 'public'),
-        open: true
-    },
-    module : {
-        rules : [
-            {
-                test : /\.pug$/,
-                use  : [
-                    {
-                        loader: 'pug-loader',
-                        options: {
-                            pretty: true
-                        }
-                    }
-                ]
-            },
-            {
-                test: /\.scss$/,
-                use: [
-                    MiniCssExtractPlugin.loader,
-                    {
-                        loader: "css-loader",
-                        options: {
-                            url: false,
-                        }
-                    },
-                    'sass-loader'
-                ]
-            },
-            {
-                test:/\.js$/,
-                exclude: '/node_modules/',
-                use: {
-                    loader: 'babel-loader',
-                    options: {
-                        presets: ['babel-preset-env']
-                    }
-                }
-            }
-        ]
-    },
-    plugins : [
-        new FixStyleOnlyEntriesPlugin(),
-        new CopyWebpackPlugin(
-            [{ from : `${__dirname}/source` }],
-            { ignore : Object.keys(targetTypes).map((ext) => `*.${ext}`) }
-        ),
-        new CleanWebpackPlugin({
-            cleanAfterEveryBuildPatterns: ['public'],
-            exclude: ['public/assets/img']
-        }),
-        new MiniCssExtractPlugin({
-            filename: './[name]',
-        }),
-    ]
-};
 
-// pug -> html
-for(const [ targetName, srcName ] of Object.entries(getEntriesList({ pug : 'html' }))) {
-    app.plugins.push(new HtmlWebpackPlugin({
-        filename : targetName,
-        template : srcName
-    }));
+console.log(getEntriesList({ scss : 'css' }));
+
+const app = (env, argv) => {
+    let sourceMap = 'source-map'
+    if(argv.mode === 'production') {
+      sourceMap = ''
+    }
+
+    const settings = [
+        // HTML
+        {
+            devServer: {
+                contentBase: path.join(__dirname, './public'),
+                open: true
+            },   
+            entry  : getEntriesList({ pug : 'html' }),
+            output : {
+                filename : '[name]',
+                path     : `${__dirname}/public/`
+            },
+            module : {
+                rules : [
+                    {
+                        test : /\.pug$/,
+                        use  : [
+                            {
+                                loader: 'pug-loader',
+                                options: {
+                                    pretty: true
+                                }
+                            }
+                        ]
+                    }
+                ]
+            },
+            plugins: [
+                new CopyWebpackPlugin(
+                    [{ from : `${__dirname}/source` }],
+                    { ignore : Object.keys(targetTypes).map((ext) => `*.${ext}`) }
+                ),
+                new CleanWebpackPlugin({
+                    cleanAfterEveryBuildPatterns: ['public'],
+                    exclude: ['public/assets/img']
+                }),
+            ]
+        },
+        // CSS
+        {
+            entry  : getEntriesList({ scss : 'css' }),
+            output : {
+                filename : '[name]',
+                path     : `${__dirname}/public/`,
+            },
+            module: {
+                rules: [
+                    {
+                        test : /\.scss$/,
+                        use  : [
+                            MiniCssExtractPlugin.loader,
+                            {
+                                loader: "css-loader",
+                                options: {
+                                    url: false,
+                                    sourceMap: true,
+                                }
+                            },
+                            {
+                                loader: 'sass-loader',
+                                options: {
+                                    sourceMap: true
+                                  }
+                            }
+                        ]
+                    }
+                ]
+            },
+            devtool: sourceMap,
+            plugins: [
+                new FixStyleOnlyEntriesPlugin(),
+                new MiniCssExtractPlugin({
+                    filename: '[name]',
+                })
+            ]
+        },
+        // JS
+        {
+            entry  : getEntriesList({ js : 'js' }),
+            output: {
+                filename : '[name]',
+                path     : `${__dirname}/public/`
+            },
+            module: {
+                rules: [
+                    {
+                        test : /\.js$/,
+                        exclude: '/node_modules/',
+                        use: {
+                            loader: 'babel-loader',
+                            options: {
+                                presets: ['babel-preset-env']
+                            }
+                        }
+                    }
+                ]
+            },
+            devtool: sourceMap,
+            plugins: [
+            ]
+        },
+    ];
+
+    // pug -> html
+    for(const [ targetName, srcName ] of Object.entries(getEntriesList({ pug : 'html' }))) {
+        settings[0].plugins.push(new HtmlWebpackPlugin({
+            filename : targetName,
+            template : srcName
+        }));
+    }
+    return settings;
 }
+
 module.exports = app;
