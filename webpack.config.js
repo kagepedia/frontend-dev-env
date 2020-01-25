@@ -49,7 +49,8 @@ const app = (env, argv) => {
             devServer: {
                 contentBase: path.join(__dirname, './public'),
                 open: true
-            },   
+            },
+            context: `${__dirname}`,
             entry  : getEntriesList({ pug : 'html' }),
             output : {
                 filename : '[name]',
@@ -83,6 +84,7 @@ const app = (env, argv) => {
         },
         // CSS
         {
+            context: `${__dirname}`,
             entry  : getEntriesList({ scss : 'css' }),
             output : {
                 filename : '[name]',
@@ -93,7 +95,11 @@ const app = (env, argv) => {
                     {
                         test : /\.scss$/,
                         use  : [
-                            MiniCssExtractPlugin.loader,
+                            /*
+                            {
+                                loader: MiniCssExtractPlugin.loader,
+                            },
+                            */
                             {
                                 loader: "css-loader",
                                 options: {
@@ -122,6 +128,7 @@ const app = (env, argv) => {
         },
         // JS
         {
+            context: `${__dirname}`,
             entry  : getEntriesList({ js : 'js' }),
             output: {
                 filename : '[name]',
@@ -151,7 +158,8 @@ const app = (env, argv) => {
     for(const [ targetName, srcName ] of Object.entries(getEntriesList({ pug : 'html' }))) {
         settings[0].plugins.push(new HtmlWebpackPlugin({
             filename : targetName,
-            template : srcName
+            template : srcName,
+            inject: false
         }));
     }
     return settings;
