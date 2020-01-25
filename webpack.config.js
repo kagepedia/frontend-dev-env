@@ -2,6 +2,7 @@ const path = require("path");
 const globule = require('globule');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
+const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
 const CopyWebpackPlugin = require('copy-webpack-plugin');
 const { CleanWebpackPlugin } = require('clean-webpack-plugin');
 const FixStyleOnlyEntriesPlugin = require("webpack-fix-style-only-entries");
@@ -115,8 +116,9 @@ const app = (env, argv) => {
                 new FixStyleOnlyEntriesPlugin(),
                 new MiniCssExtractPlugin({
                     filename: '[name]',
-                })
-            ]
+                }),
+                new OptimizeCSSAssetsPlugin({})
+            ],
         },
         // JS
         {
