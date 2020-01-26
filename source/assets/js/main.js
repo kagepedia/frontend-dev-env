@@ -1,4 +1,4 @@
 import $ from 'jquery';
-console.log($);
-
-console.log("Webpack-test");
+var txt = $('h1').text();
+console.log(txt);
+console.log("Hello Webpack4!");

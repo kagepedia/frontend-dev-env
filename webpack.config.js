@@ -46,6 +46,7 @@ const app = (env, argv) => {
         {
             devServer: {
                 contentBase: path.join(__dirname, './public'),
+                port: 8080,
                 open: true
             },
             context: `${__dirname}`,
@@ -102,6 +103,16 @@ const app = (env, argv) => {
                                 options: {
                                     url: false,
                                     sourceMap: true,
+                                }
+                            },
+                            {
+                                loader: "postcss-loader",
+                                options: {
+                                    plugins: [
+                                        require('autoprefixer')({
+                                            grid: true
+                                        })
+                                    ]
                                 }
                             },
                             {
