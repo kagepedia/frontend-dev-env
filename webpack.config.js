@@ -35,8 +35,6 @@ const getEntriesList = (targetTypes) => {
   return entriesList;
 }
 
-console.log(getEntriesList({ scss : 'css' }));
-
 const app = (env, argv) => {
     let sourceMap = 'source-map'
     if(argv.mode === 'production') {
@@ -87,7 +85,8 @@ const app = (env, argv) => {
             context: `${__dirname}`,
             entry  : getEntriesList({ scss : 'css' }),
             output : {
-                filename : '[name]',
+                // ↓「MiniCssExtractPluginのfilename」と競合してエラーが生じる
+                // filename : '[name]',
                 path     : `${__dirname}/public/`,
             },
             module: {
@@ -95,11 +94,9 @@ const app = (env, argv) => {
                     {
                         test : /\.scss$/,
                         use  : [
-                            /*
                             {
                                 loader: MiniCssExtractPlugin.loader,
                             },
-                            */
                             {
                                 loader: "css-loader",
                                 options: {
