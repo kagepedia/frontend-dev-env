@@ -158,7 +158,10 @@ const app = (env, argv) => {
             },
             devtool: sourceMap,
             plugins: [
-            ]
+            ],
+            resolve: {
+                extensions: ['.js', '.jsx'],
+              },
         },
     ];
 
