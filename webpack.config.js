@@ -1,5 +1,6 @@
 const path = require("path");
 const globule = require('globule');
+const webpack = require('webpack');
 const HtmlWebpackPlugin = require('html-webpack-plugin');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 const OptimizeCSSAssetsPlugin = require("optimize-css-assets-webpack-plugin");
@@ -146,11 +147,11 @@ const app = (env, argv) => {
                 rules: [
                     {
                         test : /\.js$/,
-                        exclude: '/node_modules/',
+                        exclude: /node_modules/,
                         use: {
                             loader: 'babel-loader',
                             options: {
-                                presets: ['babel-preset-env']
+                                presets: ['@babel/preset-env']
                             }
                         }
                     }
@@ -158,9 +159,13 @@ const app = (env, argv) => {
             },
             devtool: sourceMap,
             plugins: [
+                new webpack.ProvidePlugin({
+                    $: 'jquery',
+                    jQuery: 'jquery'
+                })
             ],
             resolve: {
-                extensions: ['.js', '.jsx'],
+                extensions: ['.js'],
               },
         },
     ];
